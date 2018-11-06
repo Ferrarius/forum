@@ -21,39 +21,25 @@ class PostController extends Controller
             }
         }
 
-//        if($tag) {
-//            $tags = [$tag];
-//            $posts = Post::whereHas('tags', function($q) use($tags) {
-//                        $q->whereIn('id', $tags);
-//                    })->get();
-////            $posts = Post::whereTagId($tagId)->get();
-//        } else {
-//            $posts = Post::all();
-//        }
-
-        $posts = Post::all();
-
-//        if($tag) {
-//            $tagId = Tag::whereName($tag)->first()->id;
-//            if($request->search) {
-//                $tags = [$tag];
-//                $posts = Post::where('title', 'like', '%'.$request->search.'%')
-//                    ->whereHas('tags', function($q) use($tags) {
-//                        $q->whereIn('id', $tags);
-//                    })->get();
-////                $posts = Post::where([
-////                    ['tag_id', '=', $tagId],
-////                    ['title', 'like', '%'.$request->search.'%']])->get();
-//////                ])->orWhere('content', 'like', '%'.$request->search."%")->get();
-//            } else {
-//                $posts = Post::whereTagId($tagId);
-//            }
-//        } else if($request->search) {
-//            $posts = Post::where('title', 'like', '%'.$request->search.'%')
-//                ->orWhere('content', 'like', '%'.$request->search."%")->get();
-//        } else {
-//            $posts = Post::all();
-//        }
+        if($tag) {
+            $tagId = Tag::whereName($tag)->first()->id;
+            if($request->search) {
+                $posts = Post::where('title', 'like', '%'.$request->search.'%')
+                    ->orWhere('content', 'like', '%'.$request->search."%")
+                    ->whereHas('tags', function($q) use ($tagId) {
+                        $q->whereTagId($tagId);
+                    })->get();
+            } else {
+                $posts = Post::whereHas('tags', function($q) use ($tagId) {
+                    $q->whereTagId($tagId);
+                })->get();
+            }
+        } else if($request->search) {
+            $posts = Post::where('title', 'like', '%'.$request->search.'%')
+                ->orWhere('content', 'like', '%'.$request->search."%")->get();
+        } else {
+            $posts = Post::all();
+        }
 
         return view('posts.index', compact('posts', 'tags'));
     }
@@ -71,6 +57,10 @@ class PostController extends Controller
 
     public function store(StorePost $request)
     {
+        if(Auth::user()->comments->count() < 5) {
+            return redirect()->back()->withErrors('You need to place 5 comments before you can make a post!');
+        }
+
         $post = Post::create($request->all());
         foreach($request->get('tags') as $tag) {
             $post->tags()->attach($tag);

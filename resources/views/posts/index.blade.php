@@ -9,7 +9,7 @@
         <a href="{{route('posts.index', $tag->name)}}" class="btn {{$tag->active == 1 ? 'btn-dark' : 'btn-secondary'}}">{{$tag->name}}</a>
     @endforeach
 
-    <form method="GET" class="float-right" action="{{route('posts.index', $tag->name)}}">
+    <form method="GET" class="float-right" action="{{route('posts.index', Request::route('tag'))}}">
         <div class="form-group">
             <input name="search" class="form-control" type="text">
         </div>
